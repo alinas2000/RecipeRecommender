@@ -2,3 +2,10 @@ checked:
 apple
 avocado
 banana
+bread
+cheese
+egg
+lemon
+mushroom
+pasta
+rice
