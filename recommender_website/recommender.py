@@ -7,8 +7,7 @@ from torch import nn, optim
 from tqdm.auto import tqdm
 import matplotlib.pyplot as plt
 import pdb
-torch.manual_seed(291)
-np.random.seed(291)
+
 
 DEVICE = torch.device('cpu')
 n_epochs = 1
@@ -107,6 +106,14 @@ def run_all(model, ldr_train, ldr_test, crit, opt, sched, n_epochs=10):
             tq_epochs.set_postfix({'bE': epoch, 'bL': best_loss}, refresh=True)
 
 
+def get_recipe_by_id(id, attr="name"):
+    x = recipes[recipes["recipe_id"] == id][attr]
+    if len(x) < 1:
+        return "Unknown"
+    else:
+        return x.values[0]
+
+
 def get_recommendations_for_user(model, dataset, user_id, batch_size=32):
     user_n = dataset.u2n[user_id]
     ratings = []
@@ -147,6 +154,8 @@ def recommend(new_data, progress_func=None, user_id=-1):
                                opt, sched, i, progress_func)
         print(f"epoch { i } -- train_loss: { train_loss }")
 
+    if progress_func:
+        progress_func(f"{100:.2f}%")
     return get_recommendations_for_user(model, ds_full, user_id)
 
 

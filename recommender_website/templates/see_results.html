@@ -8,10 +8,10 @@
 {% block body %}
     <form id="form" onsubmit="sendPrefs(); return false;" >
         {% for recipe in recipes %}
-            <label for="{{ recipe[1] }}">{{ recipe[0] }}</label><br>
+            <label title="{{ recipe[2] }}" for="{{ recipe[1] }}">{{ recipe[0] }}</label><br>
             <label for="{{ recipe[1] }}">1</label>
             {% for i in range(5) %}
-            <input type="radio" id="select_{{ i+1 }}" name="{{ recipe[1] }}" value="{{ i+1 }}" required>
+            <input type="radio" id="select_{{ i+1 }}" name="{{ recipe[1] }}" value="{{ i+1 }}">
             {% endfor %}
             <label for="{{ recipe[1] }}">5</label><br><br>
         {% endfor %}
@@ -19,10 +19,11 @@
         
         <input type="submit" value="Submit">
     </form>
+    <div id="processing" hidden>
+        <p>Processing... <span id="progress">0.00%</span></p>
+    </div>
     <div id="results" hidden>
-        <div id="processing">
-            <p>Processing... <span id="progress">0.00%</span></p>
-        </div>
+        <ul id="recipes"></ul>
     </div>
 {% endblock%}
 
@@ -38,12 +39,18 @@
         )
         socket.emit("get_recommendations", $("#form").serializeArray())
         $("#form").hide()
-        $("#results").show()
+        $("#processing").show()
     }
 
 
     socket.on('recommendations', function(json) {
+        $("#processing").hide()
+        $("#results").show()
+
         console.log(json)
+        for (const recipe of json) {
+            $("#recipes").append("<li title='Est. Rating: " + recipe["est_rating"].toFixed(2) + "'><a href='recipes/" + recipe["id"] + "' target='_blank'>" + recipe["name"] + "</a></li>")
+        }
     });
 
     socket.on('progress', function(json) {
