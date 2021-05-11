@@ -43,12 +43,13 @@ import torch, torchvision
 from torch import nn, optim
 from torchvision import datasets, models, transforms
 
-app = Flask(__name__)
-#run_with_ngrok(app)
-app.config["SESSION_PERMANENT"] = False
-app.config["SESSION_TYPE"] = "filesystem"
+device = torch.device('cpu')
 
-Session(app)
+app = Flask(__name__)
+#model = torch.nn.Module.load_state_dict(torch.load('ingredient_classifier.pkl', map_location=torch.device('cpu')))
+#torch.load('ingredient_classifier.pkl', map_location=torch.device("cpu"))
+
+
 
 infile = open('ingredient_classifier.pkl', 'rb')
 model = pickle.load(infile)
