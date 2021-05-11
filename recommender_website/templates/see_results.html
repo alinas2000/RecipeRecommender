@@ -1,0 +1,61 @@
+{% extends "main.html" %}
+
+{% block header %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+{% endblock%}
+
+{% block body %}
+    <form id="form" onsubmit="sendPrefs(); return false;" >
+        {% for recipe in recipes %}
+            <label title="{{ recipe[2] }}" for="{{ recipe[1] }}">{{ recipe[0] }}</label><br>
+            <label for="{{ recipe[1] }}">1</label>
+            {% for i in range(5) %}
+            <input type="radio" id="select_{{ i+1 }}" name="{{ recipe[1] }}" value="{{ i+1 }}">
+            {% endfor %}
+            <label for="{{ recipe[1] }}">5</label><br><br>
+        {% endfor %}
+        
+        
+        <input type="submit" value="Submit">
+    </form>
+    <div id="processing" hidden>
+        <p>Processing... <span id="progress">0.00%</span></p>
+    </div>
+    <div id="results" hidden>
+        <ul id="recipes"></ul>
+    </div>
+{% endblock%}
+
+{% block postbody %}
+<script type="text/javascript" charset="utf-8">
+    var socket = io();
+</script>
+
+<script>
+    function sendPrefs() {
+        console.log(
+            $("#form").serializeArray()
+        )
+        socket.emit("get_recommendations", $("#form").serializeArray())
+        $("#form").hide()
+        $("#processing").show()
+    }
+
+
+    socket.on('recommendations', function(json) {
+        $("#processing").hide()
+        $("#results").show()
+
+        console.log(json)
+        for (const recipe of json) {
+            $("#recipes").append("<li title='Est. Rating: " + recipe["est_rating"].toFixed(2) + "'><a href='recipes/" + recipe["id"] + "' target='_blank'>" + recipe["name"] + "</a></li>")
+        }
+    });
+
+    socket.on('progress', function(json) {
+        $("#progress").text(json)
+    });
+</script>
+
+{% endblock%}
