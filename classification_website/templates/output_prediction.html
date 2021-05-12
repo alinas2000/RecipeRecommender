@@ -3,6 +3,8 @@
         <title>Ingredient Classification</title>
     </head>
     <body>
-        <h1>The uploaded ingredient is {{ ingredient }}</h1>
+        {% for i in ingredients %}
+            <h1><br>The uploaded ingredient is {{ i }}</h1>
+        {% endfor %}
     </body>
 </html>
