@@ -24,6 +24,7 @@ class RecipeDataset(torch.utils.data.Dataset):
         self.r2n = {r: n for n, r in enumerate(df['recipe_id'].unique())}
         df['user_id_n'] = df['user_id'].apply(lambda u: self.u2n[u])
         df['recipe_id_n'] = df['recipe_id'].apply(lambda r: self.r2n[r])
+        self.df = df
         self.coords = torch.LongTensor(df[['user_id_n', 'recipe_id_n']].values)
         self.ratings = torch.FloatTensor(df['rating'].values)
         self.n_users = df['user_id_n'].nunique()
@@ -114,13 +115,18 @@ def get_recipe_by_id(id, attr="name"):
         return x.values[0]
 
 
-def get_recommendations_for_user(model, dataset, user_id, batch_size=32):
+def get_recommendations_for_user(model, dataset, user_id, ingr, exclude_ingr, batch_size=32):
+    ingr = ingr_name_to_ids(ingr)
+    exclude_ingr = ingr_name_to_ids(exclude_ingr)
+    allowed_recipes = set(recipes[recipes["ingredient_ids"].apply(
+        lambda ids: not ingr.isdisjoint(ids) and exclude_ingr.isdisjoint(ids)
+    )]["recipe_id"].unique()).intersection(set(dataset.r2n.keys()))
     user_n = dataset.u2n[user_id]
     ratings = []
     n2r = {value: key for key, value in dataset.r2n.items()}
     model.eval()
     with torch.no_grad():
-        for coords in torch.LongTensor([[user_n, i] for i in range(dataset.n_recipes)]).split(batch_size):
+        for coords in torch.LongTensor([[user_n, dataset.r2n[r]] for r in allowed_recipes]).split(batch_size):
             coords = coords.to(DEVICE)
             preds = model(coords)
             ratings += [(n2r[int(coords[i, 1])], float(preds[i]))
@@ -128,7 +134,31 @@ def get_recommendations_for_user(model, dataset, user_id, batch_size=32):
     return sorted(ratings, key=lambda x: x[1], reverse=True)
 
 
-def recommend(new_data, progress_func=None, user_id=-1):
+def ingr_name_to_ids(ingr):
+    return set(ingr_map[ingr_map["replaced"].isin(ingr)]["id"].unique())
+
+
+def recommend(new_data, ingr, progress_func=None, user_id=-1):
+    ingr = set(ingr)
+    replacements = {
+        "bellpeppers": "bell pepper",
+        "greenbeans": "green bean",
+        "olives": "olive",
+        "onions": "onion",
+        "potatoes": "potato",
+
+    }
+    exclude_ingr = {
+        "apple", "avocado", "banana", "beef", "bellpeppers", "bread",
+        "broccoli", "cabbage", "cheese", "chicken", "corn", "cucumber", "egg",
+        "eggplant", "greenbeans", "lemon", "lettuce", "mushroom", "olives",
+        "onions", "pasta", "potatoes", "rice", "salmon", "spinach", "tomato"
+    } - ingr
+    ingr = set(
+        map(lambda x: replacements[x] if x in replacements else x, ingr))
+    exclude_ingr = set(
+        map(lambda x: replacements[x] if x in replacements else x, exclude_ingr))
+
     new_recipe_ids, new_ratings = zip(*new_data.items())
     new_interactions = pd.concat([interactions, pd.DataFrame(
         {
@@ -156,7 +186,7 @@ def recommend(new_data, progress_func=None, user_id=-1):
 
     if progress_func:
         progress_func(f"{100:.2f}%")
-    return get_recommendations_for_user(model, ds_full, user_id)
+    return get_recommendations_for_user(model, ds_full, user_id, ingr, exclude_ingr)
 
 
 #

@@ -32,7 +32,10 @@ def serve_recipe(number):
 def create_recommendations(json):
     prefs = {i['name']: i['value'] for i in json}
     print(prefs)
-    results = r.recommend(prefs, progress_func=lambda x: emit("progress", x))
+    ingr = ["bellpeppers", "bread",
+            "broccoli", "cabbage", "cheese", "chicken", "corn", "cucumber", "egg", ]
+    results = r.recommend(
+        prefs, ingr, progress_func=lambda x: emit("progress", x))
     emit("recommendations", [{"name": r.get_recipe_by_id(
         i[0], "name"), "id":i[0], "est_rating": i[1]} for i in results[:20]])
 
