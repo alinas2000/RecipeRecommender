@@ -23,6 +23,7 @@ def serve_recipe(number):
         "recipe.html",
         recipe_name=r.get_recipe_by_id(number, "name"),
         recipe_description=r.get_recipe_by_id(number, "description"),
+        recipe_ingredients=r.get_recipe_by_id(number, "ingredients"),
         recipe_steps=r.get_recipe_by_id(number, "steps")
     )
 

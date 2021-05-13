@@ -11,7 +11,7 @@
             <label title="{{ recipe[2] }}" for="{{ recipe[1] }}">{{ recipe[0] }}</label><br>
             <label for="{{ recipe[1] }}">1</label>
             {% for i in range(5) %}
-            <input type="radio" id="select_{{ i+1 }}" name="{{ recipe[1] }}" value="{{ i+1 }}">
+            <input class="required" type="radio" id="select_{{ i+1 }}" name="{{ recipe[1] }}" value="{{ i+1 }}">
             {% endfor %}
             <label for="{{ recipe[1] }}">5</label><br><br>
         {% endfor %}
@@ -33,10 +33,17 @@
 </script>
 
 <script>
+
+    function checkChecked() {
+        {% for recipe in recipes %}
+        if($("input[name={{ recipe[1] }}]:checked").length == 0) return false;
+        {% endfor %}
+        return true;
+    }
+
     function sendPrefs() {
-        console.log(
-            $("#form").serializeArray()
-        )
+        if(!checkChecked()) return;
+        console.log($("#form").serializeArray())
         socket.emit("get_recommendations", $("#form").serializeArray())
         $("#form").hide()
         $("#processing").show()
