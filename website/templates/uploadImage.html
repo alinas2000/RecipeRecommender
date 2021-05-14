@@ -17,9 +17,30 @@
 -->
 
 <!doctype html>
-    <title>Upload new File</title>
-    <h1>Upload new File</h1>
+<head>
+	<title>Upload Ingredients</title>
+    <link href="css/upload.css" rel="stylesheet" type="text/css">
+<style>
+html {
+    height: 80%;
+}
+body {
+	background-image: url("images/bgpic_1.jpg");
+	background-position: center center;
+    background-size: cover;
+	background-color: #AEAEAE;
+	}
+</style>
+</head>
+	
+<body>	
+<h1>
+	<div class="title">Upload Ingredients</div>
+</h1>
+	<div class="content">
     <form method=post enctype=multipart/form-data>
       <input type=file name=image[] multiple>
       <input type=submit value=Upload>
     </form>
+	</div>
+</body>
