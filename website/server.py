@@ -47,8 +47,7 @@ def output_prediction(i):
 
 
 @app.route('/rec')
-def process(ingredients=classifier.ingredient_dict.keys()):
-    ingredients = set(ingredients)
+def process(ingredients=classifier.ingredient_dict.values()):
 
     to_rate = r.recipes.sample(5)[["name", "recipe_id", "description"]]
 
@@ -69,14 +68,19 @@ def serve_recipe(number):
 
 @socketio.on("get_recommendations")
 def create_recommendations(json):
-    prefs = {i['name']: i['value'] for i in json}
+    print(json)
+    ingr = json["ingredients"]
+    method = json["method"]
+    prefs = {i['name']: i['value'] for i in json["form"]}
     print(prefs)
-    ingr = ["bellpeppers", "bread",
-            "broccoli", "cabbage", "cheese", "chicken", "corn", "cucumber", "egg", ]
-    results = r.recommend(
-        prefs, ingr, progress_func=lambda x: emit("progress", x))
+    if method == "retrain":
+        results = r.deep_recommend(
+            prefs, ingr, progress_func=lambda x: emit("progress", x))
+    else:
+        results = r.RF_recommend(
+            prefs, ingr, progress_func=lambda x: emit("progress", x))
     emit("recommendations", [{"name": r.get_recipe_by_id(
-        i[0], "name"), "id":i[0], "est_rating": i[1]} for i in results[:20]])
+        i[0], "name"), "id":int(i[0]), "est_rating": i[1]} for i in results[:20]])
 
 
 if __name__ == "__main__":

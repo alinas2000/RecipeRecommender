@@ -7,7 +7,7 @@ from tqdm.auto import tqdm
 import classifier
 
 DEVICE = torch.device('cpu')
-n_epochs = 1
+n_epochs = 3
 
 ingr_map = pd.read_pickle("../datasets/our_ingr_map.pkl")
 recipes = pd.read_pickle("../datasets/our_recipes.pkl")
@@ -86,7 +86,7 @@ def run_train(model, ldr, crit, opt, sched, epoch, progress_func):
         total_loss += loss.item() * labels.size(0)
         total_count += labels.size(0)
         tq_iters.set_postfix({'loss': total_loss/total_count}, refresh=True)
-        if progress_func and i % 300 == 0:
+        if progress_func and i % 200 == 0:
             progress_func(f"{100*(epoch/n_epochs + i/len(ldr)):.2f}%")
     return total_loss / total_count
 
@@ -135,14 +135,14 @@ def ingr_name_to_ids(ingr):
     return set(ingr_map[ingr_map["replaced"].isin(ingr)]["id"].unique())
 
 
-def recommend(new_data, ingr, progress_func=None, user_id=-1):
+def deep_recommend(new_data, ingr, progress_func=None, user_id=-1):
     ingr = set(ingr)
     exclude_ingr = set(classifier.ingredient_dict.values()) - ingr
 
     new_recipe_ids, new_ratings = zip(*new_data.items())
     new_interactions = pd.concat([interactions, pd.DataFrame(
         {
-            "user_id": -1,
+            "user_id": user_id,
             "recipe_id": new_recipe_ids,
             "rating": [int(_) for _ in new_ratings],
         }
@@ -169,27 +169,85 @@ def recommend(new_data, ingr, progress_func=None, user_id=-1):
     return get_recommendations_for_user(model, ds_full, user_id, ingr, exclude_ingr)
 
 
-#
-# ds_full = RecipeDataset(interactions)
+class RFRecommender:
+    memoized_user_freq = dict()
+    memoized_user_ind = dict()
 
-# model = RecipeRecs(ds_full.n_users, ds_full.n_recipes, 20)
-# model.to(DEVICE)
+    def __init__(self, df, ratings):
+        self.df = df
+        self.ratings = ratings
 
-# ldr_train = torch.utils.data.DataLoader(ds_train, batch_size=32, shuffle=True)
-# ldr_test = torch.utils.data.DataLoader(ds_test, batch_size=32)
+    def __call__(self, u, i):
+        return self.pred(u, i)
 
-# n_epochs = 5
+    def freqUser(self, u, r):
+        # 10 in 9.71s
+        if u not in self.memoized_user_freq:
+            self.memoized_user_freq[u] = dict()
+        if r not in self.memoized_user_freq[u]:
+            self.memoized_user_freq[u][r] = len(
+                self.df[(self.df["user_id"] == u) & (self.df["rating"] == r)])
+        return self.memoized_user_freq[u][r]
+        # return len(
+        #     self.df[(self.df["user_id"] == u) & (self.df["rating"] == r)])
 
-# crit = nn.MSELoss().to(DEVICE)
-# opt = optim.SGD(model.parameters(), lr=1e-6, momentum=0.9)
-# sched = optim.lr_scheduler.OneCycleLR(
-#     opt, max_lr=0.4, steps_per_epoch=len(ldr_train), epochs=n_epochs)
+    def freqItem(self, i, r):
+        return len(self.df[(self.df["recipe_id"] == i) & (self.df["rating"] == r)])
 
-# run_all(model, ldr_train, ldr_test, crit, opt, sched, n_epochs)
+    def ind_avg_user(self, u, r):
+        if u not in self.memoized_user_ind:
+            self.memoized_user_ind[u] = dict()
+        if r not in self.memoized_user_ind[u]:
+            self.memoized_user_ind[u][r] = round(
+                self.df[self.df["user_id"] == u]["rating"].mean()) == r
+        return self.memoized_user_ind[u][r]
+        # return round(self.df[self.df["user_id"] == u]["rating"].mean()) == r
+
+    def ind_avg_item(self, i, r):
+        return round(self.df[self.df["recipe_id"] == i]["rating"].mean()) == r
+
+    def _pred_for_r(self, u, i, r):
+        return (self.freqUser(u, r) + 1 + self.ind_avg_user(u, r)) * (self.freqItem(i, r) + 1 + self.ind_avg_item(i, r))
+
+    def pred(self, u, i):
+        each = [self._pred_for_r(u, i, r) for r in self.ratings]
+        return self.ratings[np.argmax(each)], max(each)
 
 
-#
+def RF_recommend(new_data, ingr, progress_func=None, user_id=-1):
 
+    ingr = set(ingr)
+    exclude_ingr = set(classifier.ingredient_dict.values()) - ingr
 
-#
-# get_recommendations_for_user(model, ds_full, 2046)[:10]
+    new_recipe_ids, new_ratings = zip(*new_data.items())
+    new_interactions = pd.concat([interactions, pd.DataFrame(
+        {
+            "user_id": user_id,
+            "recipe_id": new_recipe_ids,
+            "rating": [int(_) for _ in new_ratings],
+        }
+    )])
+
+    rec = RFRecommender(new_interactions, [0, 1, 2, 3, 4, 5])
+
+    ingr = ingr_name_to_ids(ingr)
+    exclude_ingr = ingr_name_to_ids(exclude_ingr)
+
+    allowed_recipes = set(recipes[recipes["ingredient_ids"].apply(
+        lambda ids: not ingr.isdisjoint(ids) and exclude_ingr.isdisjoint(ids)
+    )]["recipe_id"].unique()).intersection(set(interactions["recipe_id"].unique()))
+
+    ratings = []
+
+    print("Allowed recipes:", len(allowed_recipes))
+
+    for i, recipe in enumerate(allowed_recipes):
+        ratings += [(recipe, *rec(user_id, recipe))]
+        if progress_func and i % 1 == 0:
+            progress_func(f"{100*(i/len(allowed_recipes)):.2f}%")
+
+    if progress_func:
+        progress_func(f"{100:.2f}%")
+
+    # Sort by rating first, then by magnitude
+    return sorted(ratings, key=lambda x: (x[1], x[2]), reverse=True)

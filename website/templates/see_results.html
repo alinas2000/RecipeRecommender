@@ -13,20 +13,21 @@
         {% endfor %}
     </ul>
 
-    <form id="form" onsubmit="sendPrefs(); return false;" >
-        <h3>Please rate the following recipes:</h3>
-        {% for recipe in recipes %}
-            <label title="{{ recipe[2] }}" for="{{ recipe[1] }}">{{ recipe[0] }}</label><br>
-            <label for="{{ recipe[1] }}">1</label>
-            {% for i in range(5) %}
-            <input class="required" type="radio" id="select_{{ i+1 }}" name="{{ recipe[1] }}" value="{{ i+1 }}">
-            {% endfor %}
-            <label for="{{ recipe[1] }}">5</label><br><br>
-        {% endfor %}
-        
-        
-        <input type="submit" value="Submit">
-    </form>
+    <div id="form">
+        <form id="myform" onsubmit="sendPrefs(); return false;" >
+            <h3>Please rate the following recipes:</h3>
+            {% for recipe in recipes %}
+                <label title="{{ recipe[2] }}" for="{{ recipe[1] }}">{{ recipe[0] }}</label><br>
+                <label for="{{ recipe[1] }}">1</label>
+                {% for i in range(5) %}
+                <input class="required" type="radio" id="select_{{ i+1 }}" name="{{ recipe[1] }}" value="{{ i+1 }}">
+                {% endfor %}
+                <label for="{{ recipe[1] }}">5</label><br><br>
+            {% endfor %}        
+        </form>
+        <button onclick="sendPrefs('retrain')" title="May take 7-10 minutes.">Deep Recommend</button>
+        <button onclick="sendPrefs('RF-Rec')" title="May take 1.5-5 minutes.">"Quick" Recommend</button>
+    </div>
     <div id="processing" hidden>
         <p>Processing... <span id="progress">0.00%</span></p>
     </div>
@@ -49,10 +50,18 @@
         return true;
     }
 
-    function sendPrefs() {
+    function sendPrefs(method) {
         if(!checkChecked()) return;
-        console.log($("#form").serializeArray())
-        socket.emit("get_recommendations", $("#form").serializeArray())
+        console.log($("#myform").serializeArray())
+        socket.emit("get_recommendations", {
+            form: $("#myform").serializeArray(),
+            method,
+            ingredients: [
+            {% for ingr in ingredients %}
+                "{{ ingr }}",
+            {% endfor %}
+            ],
+        })
         $("#form").hide()
         $("#processing").show()
     }
