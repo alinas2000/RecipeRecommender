@@ -25,6 +25,8 @@
 	top: 50%;
 	border: 2px solid ;
   	border-radius: 5px;
+    background-color: azure;
+    opacity: 0.8;
 }
 
 .content_2{
