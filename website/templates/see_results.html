@@ -4,15 +4,25 @@
 {% block header %}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+<style>
+    .list_container {
+        display: inline-block;
+    }
+    ul {
+        text-align: left;
+    }
+</style>
 {% endblock%}
 
 {% block body %}
-    <h3>Ingredients you have:</h3>
-    <ul>
-        {% for ingr in ingredients %}
-            <li>{{ ingr }}</li>
-        {% endfor %}
-    </ul>
+    <div class="list_container">
+        <h3>Ingredients you have:</h3>
+        <ul>
+            {% for ingr in ingredients %}
+                <li>{{ ingr }}</li>
+            {% endfor %}
+        </ul>
+    </div>
 
     <div id="form">
         <form id="myform" onsubmit="sendPrefs(); return false;" >
@@ -31,10 +41,13 @@
     </div>
     <div id="processing" hidden>
         <p>Processing... <span id="progress">0.00%</span></p>
+        <p style="font-size: 16px;">Please do not reload the page</p>
     </div>
     <div id="results" hidden>
-        <h3>Recipes you can (and should!) make:</h3>
-        <ul id="recipes"></ul>
+        <div class="list_container">
+            <h3>Recipes you can (and should!) make:</h3>
+            <ul id="recipes"></ul>
+        </div>
     </div>
 {% endblock%}
 
