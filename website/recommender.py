@@ -9,10 +9,10 @@ import classifier
 DEVICE = torch.device('cpu')
 n_epochs = 3
 
-ingr_map = pd.read_pickle("../datasets/our_ingr_map.pkl")
-recipes = pd.read_pickle("../datasets/our_recipes.pkl")
+ingr_map = pd.read_pickle("./cached_models/our_ingr_map.pkl")
+recipes = pd.read_pickle("./cached_models/our_recipes.pkl")
 interactions = pd.read_pickle(
-    "../datasets/our_interactions.pkl")[['user_id', 'recipe_id', 'rating']]
+    "./cached_models/our_interactions.pkl")[['user_id', 'recipe_id', 'rating']]
 
 
 class RecipeDataset(torch.utils.data.Dataset):
