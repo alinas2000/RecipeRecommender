@@ -38,7 +38,7 @@ def upload_image():
         # return render_template("output_prediction.html", ingredients=ingredients_list)
         return process(ingredients_list)
 
-    return render_template("uploadImage.html")
+    return render_template("uploadImage.html", ingr_list=classifier.ingredient_dict.values())
 
 
 @app.route('/output_prediction/<i>')
