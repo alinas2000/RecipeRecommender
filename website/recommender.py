@@ -87,7 +87,8 @@ def run_train(model, ldr, crit, opt, sched, epoch, progress_func):
         total_count += labels.size(0)
         tq_iters.set_postfix({'loss': total_loss/total_count}, refresh=True)
         if progress_func and i % 200 == 0:
-            progress_func(f"{100*(epoch/n_epochs + i/len(ldr)):.2f}%")
+            progress_func(
+                f"{100*(epoch/n_epochs + i/(len(ldr)*n_epochs)):.2f}%")
     return total_loss / total_count
 
 
