@@ -7,7 +7,7 @@ from tqdm.auto import tqdm
 import classifier
 
 DEVICE = torch.device('cpu')
-n_epochs = 3
+n_epochs = 5
 
 ingr_map = pd.read_pickle("./cached_models/our_ingr_map.pkl")
 recipes = pd.read_pickle("./cached_models/our_recipes.pkl")
