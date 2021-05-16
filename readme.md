@@ -14,7 +14,7 @@ Next, install python dependencies using pip:
 
 > `$ pip install -r website/requirements.txt`
 
-> `$ pip install jupyter`
+> `$ pip install notebook`
 
 #### Create Pickled Dataset
 
