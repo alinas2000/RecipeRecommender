@@ -24,7 +24,7 @@ Start a Jupyter server:
 
 > `$ jupyter notebook`
 
-Open `recipe_pickling.ipynb` and run all the cells. This should save 3 pickled datasets to `website/cached_models`. These datasets help with retraining the recommender system.
+Open `recipe_pickling.ipynb` and run all the cells. This should save 3 pickled datasets to `website/cached_models`. These datasets help with retraining the recommender system. Once this is complete, you can kill the Jupyter Server.
 
 #### Run Server
 
